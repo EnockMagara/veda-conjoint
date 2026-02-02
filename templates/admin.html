@@ -1,0 +1,552 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard - TalentMatch</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Montserrat', sans-serif;
+            background: #0a0a0a;
+            min-height: 100vh;
+            color: #e8e8e8;
+        }
+        
+        .header {
+            background: #121218;
+            color: white;
+            padding: 2.5rem 2rem;
+            text-align: center;
+            border-bottom: 1px solid rgba(201, 148, 74, 0.3);
+        }
+        
+        .header h1 {
+            font-size: 2rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            letter-spacing: 0.5px;
+        }
+        
+        .header h1 span {
+            color: #c9944a;
+        }
+        
+        .header p {
+            opacity: 0.7;
+            font-weight: 300;
+            letter-spacing: 0.3px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+        
+        .stat-card {
+            background: #121218;
+            border-radius: 16px;
+            padding: 1.75rem;
+            border: 1px solid rgba(201, 148, 74, 0.15);
+            transition: transform 0.3s ease, border-color 0.3s ease;
+        }
+        
+        .stat-card:hover {
+            transform: translateY(-4px);
+            border-color: rgba(201, 148, 74, 0.4);
+        }
+        
+        .stat-card h3 {
+            color: #888;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            margin-bottom: 0.75rem;
+            font-weight: 500;
+        }
+        
+        .stat-card .value {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: #c9944a;
+            letter-spacing: -0.5px;
+        }
+        
+        .stat-card .subtext {
+            color: #666;
+            font-size: 0.8rem;
+            margin-top: 0.5rem;
+            font-weight: 400;
+        }
+        
+        .section {
+            background: #121218;
+            border-radius: 16px;
+            padding: 2rem;
+            margin-bottom: 1.5rem;
+            border: 1px solid rgba(201, 148, 74, 0.15);
+        }
+        
+        .section h2 {
+            color: #e8e8e8;
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin-bottom: 1.5rem;
+            padding-bottom: 0.75rem;
+            border-bottom: 1px solid rgba(201, 148, 74, 0.2);
+            letter-spacing: 0.5px;
+        }
+        
+        .section p.description {
+            color: #888;
+            margin-bottom: 1.25rem;
+            font-size: 0.9rem;
+            line-height: 1.6;
+        }
+        
+        .export-buttons {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+        
+        .export-btn {
+            padding: 0.875rem 1.75rem;
+            border: 1px solid rgba(201, 148, 74, 0.3);
+            border-radius: 10px;
+            cursor: pointer;
+            font-weight: 500;
+            font-family: 'Montserrat', sans-serif;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            transition: all 0.3s ease;
+            font-size: 0.9rem;
+            letter-spacing: 0.3px;
+        }
+        
+        .export-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+        }
+        
+        .export-btn.csv {
+            background: rgba(16, 185, 129, 0.15);
+            color: #10b981;
+            border-color: rgba(16, 185, 129, 0.4);
+        }
+        
+        .export-btn.csv:hover {
+            background: rgba(16, 185, 129, 0.25);
+        }
+        
+        .export-btn.json {
+            background: rgba(59, 130, 246, 0.15);
+            color: #60a5fa;
+            border-color: rgba(59, 130, 246, 0.4);
+        }
+        
+        .export-btn.json:hover {
+            background: rgba(59, 130, 246, 0.25);
+        }
+        
+        .export-btn.r {
+            background: rgba(139, 92, 246, 0.15);
+            color: #a78bfa;
+            border-color: rgba(139, 92, 246, 0.4);
+        }
+        
+        .export-btn.r:hover {
+            background: rgba(139, 92, 246, 0.25);
+        }
+        
+        .export-btn.python {
+            background: rgba(201, 148, 74, 0.15);
+            color: #c9944a;
+            border-color: rgba(201, 148, 74, 0.4);
+        }
+        
+        .export-btn.python:hover {
+            background: rgba(201, 148, 74, 0.25);
+        }
+        
+        .attributes-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        
+        .attributes-table th,
+        .attributes-table td {
+            padding: 1rem 1.25rem;
+            text-align: left;
+            border-bottom: 1px solid rgba(201, 148, 74, 0.1);
+        }
+        
+        .attributes-table th {
+            background: rgba(201, 148, 74, 0.08);
+            font-weight: 600;
+            color: #c9944a;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        .attributes-table td {
+            color: #ccc;
+            font-size: 0.9rem;
+        }
+        
+        .attributes-table tr:hover {
+            background: rgba(201, 148, 74, 0.05);
+        }
+        
+        .level-badge {
+            display: inline-block;
+            background: rgba(201, 148, 74, 0.15);
+            color: #c9944a;
+            padding: 0.3rem 0.85rem;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            margin: 0.2rem;
+            border: 1px solid rgba(201, 148, 74, 0.25);
+            font-weight: 500;
+            letter-spacing: 0.2px;
+        }
+        
+        .combinations-info {
+            margin-top: 1.25rem;
+            padding: 1.25rem;
+            background: rgba(201, 148, 74, 0.08);
+            border-radius: 10px;
+            border: 1px solid rgba(201, 148, 74, 0.15);
+        }
+        
+        .combinations-info strong {
+            color: #888;
+            font-weight: 500;
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .combinations-info span {
+            color: #c9944a;
+            font-weight: 600;
+            font-size: 1.1rem;
+            margin-left: 0.5rem;
+        }
+        
+        .choice-distribution {
+            display: flex;
+            gap: 2rem;
+            align-items: center;
+        }
+        
+        .choice-stat {
+            text-align: center;
+        }
+        
+        .choice-stat .number {
+            font-size: 3rem;
+            font-weight: 700;
+            letter-spacing: -1px;
+        }
+        
+        .choice-stat .label {
+            color: #666;
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-weight: 500;
+        }
+        
+        .choice-stat.option-a .number {
+            color: #c9944a;
+        }
+        
+        .choice-stat.option-b .number {
+            color: #a78bfa;
+        }
+        
+        .choice-bar-container {
+            flex: 1;
+            height: 12px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 6px;
+            overflow: hidden;
+            border: 1px solid rgba(201, 148, 74, 0.15);
+        }
+        
+        .choice-bar {
+            height: 100%;
+            background: #c9944a;
+            width: 50%;
+            transition: width 0.5s ease;
+            border-radius: 6px;
+        }
+        
+        .back-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            color: #c9944a;
+            text-decoration: none;
+            font-size: 0.9rem;
+            margin-bottom: 1rem;
+            transition: opacity 0.3s ease;
+            font-weight: 500;
+            letter-spacing: 0.3px;
+        }
+        
+        .back-link:hover {
+            opacity: 0.8;
+        }
+        
+        .admin-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 2rem;
+        }
+        
+        .admin-header h1 {
+            font-size: 1.75rem;
+            color: #e8e8e8;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+        }
+        
+        .admin-header h1 span {
+            color: #c9944a;
+        }
+        
+        @media (max-width: 768px) {
+            .container {
+                padding: 1rem;
+            }
+            
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .export-buttons {
+                flex-direction: column;
+            }
+            
+            .export-btn {
+                justify-content: center;
+            }
+            
+            .choice-distribution {
+                flex-direction: column;
+                gap: 1rem;
+            }
+            
+            .choice-bar-container {
+                width: 100%;
+                order: 1;
+            }
+            
+            .choice-stat {
+                order: 2;
+            }
+            
+            .choice-stat .number {
+                font-size: 2rem;
+            }
+            
+            .section {
+                padding: 1.25rem;
+            }
+            
+            .attributes-table th,
+            .attributes-table td {
+                padding: 0.75rem;
+                font-size: 0.8rem;
+            }
+            
+            .admin-header {
+                flex-direction: column;
+                gap: 1rem;
+            }
+            
+            .admin-header h1 {
+                font-size: 1.4rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="admin-header">
+            <div>
+                <a href="/" class="back-link">
+                    ← Back to Survey
+                </a>
+                <h1>Experiment <span>Dashboard</span></h1>
+            </div>
+        </div>
+
+        <!-- Statistics -->
+        <div class="stats-grid" id="statsGrid">
+            <div class="stat-card">
+                <h3>Total Sessions</h3>
+                <div class="value" id="totalSessions">-</div>
+            </div>
+            <div class="stat-card">
+                <h3>Completed</h3>
+                <div class="value" id="completedSessions">-</div>
+                <div class="subtext" id="completionRate">-</div>
+            </div>
+            <div class="stat-card">
+                <h3>Total Choices</h3>
+                <div class="value" id="totalChoices">-</div>
+            </div>
+            <div class="stat-card">
+                <h3>Avg Response Time</h3>
+                <div class="value" id="avgResponseTime">-</div>
+                <div class="subtext">milliseconds</div>
+            </div>
+        </div>
+
+        <!-- Export Section -->
+        <div class="section">
+            <h2>Export Data</h2>
+            <p class="description">Download experiment data in your preferred format for analysis.</p>
+            <div class="export-buttons">
+                <button class="export-btn csv" onclick="exportData('csv')">
+                    Export CSV
+                </button>
+                <button class="export-btn json" onclick="exportData('json')">
+                    Export JSON
+                </button>
+                <button class="export-btn r" onclick="exportData('r')">
+                    Export R Script
+                </button>
+                <button class="export-btn python" onclick="exportData('python')">
+                    Export Python
+                </button>
+            </div>
+        </div>
+
+        <!-- Choice Distribution -->
+        <div class="section">
+            <h2>Choice Distribution</h2>
+            <div class="choice-distribution" id="choiceDistribution">
+                <div class="choice-stat option-a">
+                    <div class="number" id="choiceA">-</div>
+                    <div class="label">Option A</div>
+                </div>
+                <div class="choice-bar-container">
+                    <div class="choice-bar" id="choiceBar"></div>
+                </div>
+                <div class="choice-stat option-b">
+                    <div class="number" id="choiceB">-</div>
+                    <div class="label">Option B</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Load statistics on page load
+        async function loadStatistics() {
+            try {
+                const response = await fetch('/api/export/statistics');
+                const data = await response.json();
+                
+                document.getElementById('totalSessions').textContent = data.total_sessions || 0;
+                document.getElementById('completedSessions').textContent = data.completed_sessions || 0;
+                document.getElementById('completionRate').textContent = 
+                    `${((data.completion_rate || 0) * 100).toFixed(1)}% completion rate`;
+                document.getElementById('totalChoices').textContent = data.total_choices || 0;
+                
+                const avgTime = data.response_time_stats?.avg_response_time;
+                document.getElementById('avgResponseTime').textContent = 
+                    avgTime ? Math.round(avgTime).toLocaleString() : '-';
+                
+                // Choice distribution
+                const dist = data.choice_distribution || {};
+                const choiceA = dist['A'] || 0;
+                const choiceB = dist['B'] || 0;
+                const total = choiceA + choiceB;
+                
+                document.getElementById('choiceA').textContent = choiceA;
+                document.getElementById('choiceB').textContent = choiceB;
+                
+                if (total > 0) {
+                    document.getElementById('choiceBar').style.width = 
+                        `${(choiceA / total * 100).toFixed(1)}%`;
+                }
+            } catch (error) {
+                console.error('Error loading statistics:', error);
+            }
+        }
+
+        // Load attributes
+        async function loadAttributes() {
+            try {
+                const response = await fetch('/api/attributes/statistics');
+                const data = await response.json();
+                
+                const tbody = document.getElementById('attributesBody');
+                tbody.innerHTML = '';
+                
+                data.attributes.forEach(attr => {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td><strong>${attr.name}</strong><br><small style="color: #666;">${attr.key}</small></td>
+                        <td id="levels-${attr.key}">Loading...</td>
+                        <td>${attr.level_count}</td>
+                    `;
+                    tbody.appendChild(row);
+                });
+                
+                document.getElementById('totalCombinations').textContent = 
+                    data.total_possible_combinations.toLocaleString();
+                
+                // Load full attribute details for levels
+                const attrResponse = await fetch('/api/attributes');
+                const attributes = await attrResponse.json();
+                
+                attributes.forEach(attr => {
+                    const cell = document.getElementById(`levels-${attr.attribute_key}`);
+                    if (cell) {
+                        cell.innerHTML = attr.levels.map(l => 
+                            `<span class="level-badge">${l.display_text}</span>`
+                        ).join(' ');
+                    }
+                });
+            } catch (error) {
+                console.error('Error loading attributes:', error);
+            }
+        }
+
+        // Export data
+        function exportData(format) {
+            window.location.href = `/api/export/all?format=${format}`;
+        }
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            loadStatistics();
+        });
+    </script>
+</body>
+</html>

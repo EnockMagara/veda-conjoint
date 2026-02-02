@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="theme-color" content="#0a0a0a">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <title>Veda- Job Preference Survey</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700&family=Cinzel:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Header -->
+        <header class="chat-header">
+            <div class="header-content">
+                <div class="avatar jill-avatar">
+                    <span>J</span>
+                </div>
+                <div class="header-text">
+                    <h1>Jill</h1>
+                    <span class="status">Career Preference Assistant</span>
+                </div>
+            </div>
+            <div class="progress-container" id="progressContainer">
+                <div class="progress-bar" id="progressBar"></div>
+            </div>
+        </header>
+
+        <!-- Chat Messages Area -->
+        <main class="chat-messages" id="chatMessages">
+            <!-- Messages will be dynamically inserted here -->
+        </main>
+
+        <!-- Input Area -->
+        <footer class="chat-input-area" id="inputArea">
+            <div class="text-input-container hidden" id="textInputContainer">
+                <input 
+                    type="text" 
+                    id="userInput" 
+                    placeholder="Type your response..."
+                    autocomplete="off"
+                >
+                <button id="sendBtn" class="send-btn" disabled>
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M22 2L11 13"></path>
+                        <path d="M22 2L15 22L11 13L2 9L22 2Z"></path>
+                    </svg>
+                </button>
+            </div>
+
+            <!-- Choice Options Container (for selection questions) -->
+            <div class="choice-options-container hidden" id="choiceOptionsContainer">
+                <!-- Choice buttons will be dynamically inserted here -->
+            </div>
+
+            <!-- Conjoint Prompt (shown during conjoint) -->
+            <div class="conjoint-prompt hidden" id="conjointPrompt">
+                <span class="prompt-text">Tap your preferred job option above</span>
+            </div>
+        </footer>
+    </div>
+
+    <!-- Job Cards Overlay (for conjoint - scrollable) -->
+    <div class="job-cards-overlay hidden" id="jobCardsOverlay">
+        <div class="job-cards-header">
+            <div class="round-info">
+                <span class="round-label">Round</span>
+                <span class="round-number" id="roundNumber">1</span>
+                <span class="round-total">of <span id="totalRounds">5</span></span>
+            </div>
+            <div class="comparison-label">Compare & Choose</div>
+        </div>
+        <div class="job-cards-scroll">
+            <div class="job-cards-container" id="jobCardsContainer">
+                <div class="job-card" id="cardA" data-choice="A">
+                    <div class="card-header">
+                        <span class="card-label">Option A</span>
+                    </div>
+                    <div class="card-content" id="cardAContent">
+                        <!-- Job attributes will be inserted here -->
+                    </div>
+                    <button class="select-btn">Choose This Job</button>
+                </div>
+                <div class="vs-divider">
+                    <span>VS</span>
+                </div>
+                <div class="job-card" id="cardB" data-choice="B">
+                    <div class="card-header">
+                        <span class="card-label">Option B</span>
+                    </div>
+                    <div class="card-content" id="cardBContent">
+                        <!-- Job attributes will be inserted here -->
+                    </div>
+                    <button class="select-btn">Choose This Job</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Loading Overlay -->
+    <div class="loading-overlay hidden" id="loadingOverlay">
+        <div class="loading-spinner"></div>
+    </div>
+
+    <!-- Completion Page (Luxury) -->
+    <div class="completion-page hidden" id="completionPage">
+        <div class="completion-container">
+            <div class="completion-header">
+                <div class="completion-icon-wrapper">
+                    <svg class="completion-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                        <polyline points="22 4 12 14.01 9 11.01"></polyline>
+                    </svg>
+                </div>
+                <h1 class="completion-title">Thank You, <span id="completionUserName">there</span></h1>
+                <p class="completion-subtitle">Your insights matter</p>
+            </div>
+            
+            <div class="completion-content">
+                <div class="completion-message">
+                    <p>Your responses have been securely recorded and will help shape the future of career matching.</p>
+                </div>
+                
+                <div class="completion-stats">
+                    <div class="stat-item">
+                        <span class="stat-value" id="completedRounds">5</span>
+                        <span class="stat-label">Comparisons Made</span>
+                    </div>
+                    <div class="stat-divider"></div>
+                    <div class="stat-item">
+                        <span class="stat-value">100%</span>
+                        <span class="stat-label">Complete</span>
+                    </div>
+                </div>
+                
+                <div class="completion-note">
+                    <p>Your preferences help us understand what matters most to job seekers like you.</p>
+                </div>
+            </div>
+            
+            <div class="completion-footer">
+                <p class="footer-text">Powered by Veda</p>
+                <div class="footer-divider"></div>
+                <p class="session-id">Session: <span id="completionSessionId">-</span></p>
+            </div>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/chat.js') }}"></script>
+</body>
+</html>
