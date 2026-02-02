@@ -5,6 +5,7 @@ Flask application factory with MongoDB integration
 from flask import Flask
 from flask_pymongo import PyMongo
 from pymongo import MongoClient
+from urllib.parse import urlparse
 import os
 
 mongo = PyMongo()
@@ -32,6 +33,26 @@ def get_db():
     return None
 
 
+def _extract_db_name(mongo_uri: str) -> str:
+    """
+    Extract database name from MongoDB URI.
+    Handles URIs like: mongodb://user:pass@host:port/dbname?options
+    """
+    try:
+        parsed = urlparse(mongo_uri)
+        # Path contains /dbname - strip leading slash
+        db_name = parsed.path.lstrip('/')
+        # Remove any query parameters that might have slipped through
+        if '?' in db_name:
+            db_name = db_name.split('?')[0]
+        # Default if empty
+        if not db_name or '.' in db_name:  # Invalid db name
+            db_name = 'veda_conjoint'
+        return db_name
+    except Exception:
+        return 'veda_conjoint'
+
+
 def create_app(config_name='default'):
     """Application factory pattern for Flask app creation."""
     global _direct_client, _direct_db
@@ -52,11 +73,13 @@ def create_app(config_name='default'):
         masked_uri = mongo_uri.split('@')[-1] if '@' in mongo_uri else mongo_uri[:30]
         print(f"🔗 MongoDB URI: ...@{masked_uri}")
         
+        # Extract database name from URI
+        db_name = _extract_db_name(mongo_uri)
+        print(f"📦 Database name: {db_name}")
+        
         # Initialize direct MongoDB connection first
         try:
             _direct_client = MongoClient(mongo_uri)
-            # Get database name from URI or use default
-            db_name = mongo_uri.split('/')[-1].split('?')[0] or 'jack_and_jill_conjoint'
             _direct_db = _direct_client[db_name]
             
             # Test connection
