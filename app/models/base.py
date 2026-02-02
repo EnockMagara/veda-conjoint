@@ -5,6 +5,7 @@ Implements Template Method pattern for CRUD operations
 from abc import ABC, abstractmethod
 from datetime import datetime
 from bson import ObjectId
+from flask import current_app
 from app import mongo
 
 
@@ -22,8 +23,38 @@ class BaseModel(ABC):
     
     @property
     def collection(self):
-        """Get the MongoDB collection."""
-        return mongo.db[self.collection_name]
+        """
+        Get the MongoDB collection with connection validation.
+        Raises RuntimeError if database is not connected.
+        """
+        db = self._get_db()
+        if db is None:
+            raise RuntimeError(
+                f"MongoDB database not connected. "
+                f"Cannot access collection '{self.collection_name}'"
+            )
+        return db[self.collection_name]
+    
+    @staticmethod
+    def _get_db():
+        """
+        Safely get MongoDB database, handling both startup and runtime contexts.
+        Returns None if database is not available.
+        """
+        # Primary: Flask-PyMongo's db attribute
+        if mongo.db is not None:
+            return mongo.db
+        
+        # Fallback: Try from current app extensions
+        try:
+            if hasattr(current_app, 'extensions') and 'pymongo' in current_app.extensions:
+                pymongo_ext = current_app.extensions['pymongo']
+                if 'MONGO' in pymongo_ext:
+                    return pymongo_ext['MONGO'][1]
+        except RuntimeError:
+            pass  # Outside app context
+        
+        return None
     
     def to_dict(self) -> dict:
         """Convert model to dictionary for MongoDB insertion."""
