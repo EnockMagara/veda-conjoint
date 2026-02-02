@@ -4,13 +4,38 @@ Flask application factory with MongoDB integration
 """
 from flask import Flask
 from flask_pymongo import PyMongo
+from pymongo import MongoClient
 import os
 
 mongo = PyMongo()
 
+# Direct MongoDB client for operations outside request context
+_direct_client = None
+_direct_db = None
+
+
+def get_db():
+    """
+    Get MongoDB database, works both in and out of request context.
+    Uses Flask-PyMongo's connection when available, falls back to direct client.
+    """
+    global _direct_client, _direct_db
+    
+    # Try Flask-PyMongo first (preferred in request context)
+    if mongo.db is not None:
+        return mongo.db
+    
+    # Fallback to direct client
+    if _direct_db is not None:
+        return _direct_db
+    
+    return None
+
 
 def create_app(config_name='default'):
     """Application factory pattern for Flask app creation."""
+    global _direct_client, _direct_db
+    
     app = Flask(__name__, 
                 template_folder='../templates',
                 static_folder='../static')
@@ -19,16 +44,32 @@ def create_app(config_name='default'):
     from app.config import config
     app.config.from_object(config[config_name])
     
-    # Debug: Log MongoDB URI (masked)
-    mongo_uri = app.config.get('MONGO_URI', 'NOT SET')
-    if mongo_uri and mongo_uri != 'NOT SET':
+    # Get MongoDB URI
+    mongo_uri = app.config.get('MONGO_URI', '')
+    
+    if mongo_uri:
         # Mask password for logging
-        masked_uri = mongo_uri.split('@')[0][:20] + '...' if '@' in mongo_uri else mongo_uri[:30] + '...'
-        print(f"🔗 MongoDB URI configured: {masked_uri}")
+        masked_uri = mongo_uri.split('@')[-1] if '@' in mongo_uri else mongo_uri[:30]
+        print(f"🔗 MongoDB URI: ...@{masked_uri}")
+        
+        # Initialize direct MongoDB connection first
+        try:
+            _direct_client = MongoClient(mongo_uri)
+            # Get database name from URI or use default
+            db_name = mongo_uri.split('/')[-1].split('?')[0] or 'jack_and_jill_conjoint'
+            _direct_db = _direct_client[db_name]
+            
+            # Test connection
+            _direct_client.server_info()
+            print(f"✅ Direct MongoDB connection established to '{db_name}'")
+        except Exception as e:
+            print(f"⚠️ Direct MongoDB connection failed: {e}")
+            _direct_client = None
+            _direct_db = None
     else:
         print("⚠️ MONGO_URI not configured!")
     
-    # Initialize MongoDB
+    # Initialize Flask-PyMongo (for request context usage)
     mongo.init_app(app)
     
     # Register blueprints
@@ -38,20 +79,22 @@ def create_app(config_name='default'):
     app.register_blueprint(api_bp, url_prefix='/api')
     app.register_blueprint(views_bp)
     
-    # Verify MongoDB connection and initialize attributes
-    with app.app_context():
+    # Initialize default job attributes using direct connection
+    if _direct_db is not None:
         try:
-            # Test connection by listing collections
-            if mongo.db is not None:
-                collections = mongo.db.list_collection_names()
-                print(f"✅ MongoDB connected. Collections: {collections}")
+            existing_count = _direct_db.job_attributes.count_documents({})
+            if existing_count == 0:
+                from app.models.job_attribute import DEFAULT_JOB_ATTRIBUTES
+                for attr_data in DEFAULT_JOB_ATTRIBUTES:
+                    _direct_db.job_attributes.insert_one({
+                        'attribute_key': attr_data['attribute_key'],
+                        'display_name': attr_data['display_name'],
+                        'levels': attr_data['levels']
+                    })
+                print(f"✓ Seeded {len(DEFAULT_JOB_ATTRIBUTES)} default job attributes")
             else:
-                print("⚠️ mongo.db is None - connection may not be ready")
+                print(f"✓ Found {existing_count} existing job attributes")
         except Exception as e:
-            print(f"⚠️ MongoDB connection test failed: {e}")
-        
-        # Initialize default job attributes
-        from app.services.attribute_service import AttributeService
-        AttributeService.initialize_default_attributes()
+            print(f"⚠️ Failed to initialize attributes: {e}")
     
     return app

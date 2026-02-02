@@ -2,9 +2,8 @@
 Attribute Service - Manages job attributes for conjoint analysis
 """
 from typing import List, Dict, Any, Optional
-from flask import current_app
 from app.models.job_attribute import JobAttribute, DEFAULT_JOB_ATTRIBUTES
-from app import mongo
+from app import mongo, get_db
 
 
 class AttributeService:
@@ -17,25 +16,6 @@ class AttributeService:
     _cached_attributes = None
     
     @classmethod
-    def _get_db(cls):
-        """
-        Safely get MongoDB database connection.
-        Works both during startup and runtime.
-        """
-        # Try Flask-PyMongo's db
-        if mongo.db is not None:
-            return mongo.db
-        
-        # Fallback: Try to get from current app context
-        try:
-            if hasattr(current_app, 'extensions') and 'pymongo' in current_app.extensions:
-                return current_app.extensions['pymongo']['MONGO'][1]
-        except RuntimeError:
-            pass  # Outside app context
-        
-        return None
-    
-    @classmethod
     def initialize_default_attributes(cls) -> bool:
         """
         Initialize default job attributes if not already present.
@@ -44,9 +24,8 @@ class AttributeService:
         Returns True if successful.
         """
         try:
-            db = cls._get_db()
+            db = get_db()
             if db is None:
-                # Defer initialization - will be done on first access
                 print("⏳ MongoDB not ready, deferring attribute initialization")
                 return False
             
@@ -96,7 +75,7 @@ class AttributeService:
             return cls._cached_attributes
         
         # Ensure database is accessible
-        db = cls._get_db()
+        db = get_db()
         if db is None:
             raise RuntimeError(
                 "MongoDB connection not available. "
