@@ -6,6 +6,7 @@ from flask import Flask
 from flask_pymongo import PyMongo
 from pymongo import MongoClient
 from urllib.parse import urlparse
+import time
 import os
 
 mongo = PyMongo()
@@ -53,6 +54,38 @@ def _extract_db_name(mongo_uri: str) -> str:
         return 'veda_conjoint'
 
 
+def _connect_mongodb_with_retry(mongo_uri: str, db_name: str, max_retries: int = 3):
+    """
+    Connect to MongoDB with retry logic for Railway's internal network.
+    """
+    global _direct_client, _direct_db
+    
+    for attempt in range(max_retries):
+        try:
+            # Create client with longer timeout for Railway's internal network
+            _direct_client = MongoClient(
+                mongo_uri,
+                serverSelectionTimeoutMS=10000,  # 10 seconds
+                connectTimeoutMS=10000,
+                socketTimeoutMS=30000
+            )
+            _direct_db = _direct_client[db_name]
+            
+            # Test connection
+            _direct_client.server_info()
+            print(f"✅ MongoDB connected to '{db_name}' (attempt {attempt + 1})")
+            return True
+            
+        except Exception as e:
+            print(f"⚠️ MongoDB connection attempt {attempt + 1}/{max_retries} failed: {e}")
+            if attempt < max_retries - 1:
+                time.sleep(2)  # Wait before retry
+            _direct_client = None
+            _direct_db = None
+    
+    return False
+
+
 def create_app(config_name='default'):
     """Application factory pattern for Flask app creation."""
     global _direct_client, _direct_db
@@ -77,18 +110,8 @@ def create_app(config_name='default'):
         db_name = _extract_db_name(mongo_uri)
         print(f"📦 Database name: {db_name}")
         
-        # Initialize direct MongoDB connection first
-        try:
-            _direct_client = MongoClient(mongo_uri)
-            _direct_db = _direct_client[db_name]
-            
-            # Test connection
-            _direct_client.server_info()
-            print(f"✅ Direct MongoDB connection established to '{db_name}'")
-        except Exception as e:
-            print(f"⚠️ Direct MongoDB connection failed: {e}")
-            _direct_client = None
-            _direct_db = None
+        # Try to connect with retries
+        _connect_mongodb_with_retry(mongo_uri, db_name)
     else:
         print("⚠️ MONGO_URI not configured!")
     
