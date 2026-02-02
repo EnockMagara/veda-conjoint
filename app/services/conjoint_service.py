@@ -10,6 +10,7 @@ from app.models.chat_session import ChatSession
 from app.models.generated_job_card import GeneratedJobCard
 from app.models.conjoint_choice import ConjointChoice
 from app.models.job_attribute import JobAttribute
+from app.services.attribute_service import AttributeService
 from app.patterns.factory import JobCardFactory
 from app.patterns.strategy import (
     SeededRandomStrategy,
@@ -76,8 +77,8 @@ class ConjointService:
                 session.session_seed
             )
         
-        # Get attribute definitions for display
-        attributes = JobAttribute.get_all_attributes()
+        # Get attribute definitions for display (via AttributeService for initialization safety)
+        attributes = AttributeService.get_all_attributes()
         attr_map = {a.attribute_key: a for a in attributes}
         
         return {

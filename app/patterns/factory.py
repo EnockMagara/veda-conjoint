@@ -7,6 +7,7 @@ from typing import Dict, List, Tuple
 from bson import ObjectId
 from app.models.job_attribute import JobAttribute
 from app.models.generated_job_card import GeneratedJobCard
+from app.services.attribute_service import AttributeService
 
 
 class JobCardBuilder:
@@ -76,10 +77,14 @@ class JobCardFactory:
         self._strategy = strategy
         return self
     
-    def _load_attributes(self):
-        """Lazy load attribute definitions."""
+    def _load_attributes(self) -> List[JobAttribute]:
+        """
+        Lazy load attribute definitions via AttributeService.
+        Ensures initialization and provides clear error on failure.
+        """
         if self._attribute_definitions is None:
-            self._attribute_definitions = JobAttribute.get_all_attributes()
+            # Use AttributeService which handles initialization
+            self._attribute_definitions = AttributeService.get_all_attributes()
         return self._attribute_definitions
     
     def create_card_pair(self, session_id: ObjectId, round_number: int,
