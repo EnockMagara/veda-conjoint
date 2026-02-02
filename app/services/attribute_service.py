@@ -2,6 +2,7 @@
 Attribute Service - Manages job attributes for conjoint analysis
 """
 from typing import List, Dict, Any, Optional
+from flask import current_app
 from app.models.job_attribute import JobAttribute, DEFAULT_JOB_ATTRIBUTES
 from app import mongo
 
@@ -9,35 +10,53 @@ from app import mongo
 class AttributeService:
     """
     Service for managing conjoint job attributes.
-    Implements Singleton pattern for attribute caching.
+    Implements Singleton pattern for attribute caching with lazy initialization.
     """
     
     _initialized = False
     _cached_attributes = None
     
     @classmethod
+    def _get_db(cls):
+        """
+        Safely get MongoDB database connection.
+        Works both during startup and runtime.
+        """
+        # Try Flask-PyMongo's db
+        if mongo.db is not None:
+            return mongo.db
+        
+        # Fallback: Try to get from current app context
+        try:
+            if hasattr(current_app, 'extensions') and 'pymongo' in current_app.extensions:
+                return current_app.extensions['pymongo']['MONGO'][1]
+        except RuntimeError:
+            pass  # Outside app context
+        
+        return None
+    
+    @classmethod
     def initialize_default_attributes(cls) -> bool:
         """
         Initialize default job attributes if not already present.
-        Called on app startup. Returns True if successful.
+        Uses defensive initialization with lazy loading pattern.
         
-        Uses defensive initialization pattern:
-        1. Check if DB is accessible
-        2. Seed default attributes if missing
-        3. Validate at least one attribute exists
+        Returns True if successful.
         """
         try:
-            # Verify MongoDB connection is working
-            if mongo.db is None:
-                raise ConnectionError("MongoDB connection not established")
+            db = cls._get_db()
+            if db is None:
+                # Defer initialization - will be done on first access
+                print("⏳ MongoDB not ready, deferring attribute initialization")
+                return False
             
             # Check if attributes already exist
-            existing_count = mongo.db.job_attributes.count_documents({})
+            existing_count = db.job_attributes.count_documents({})
             
             if existing_count == 0:
                 # Seed default attributes
                 for attr_data in DEFAULT_JOB_ATTRIBUTES:
-                    mongo.db.job_attributes.insert_one({
+                    db.job_attributes.insert_one({
                         'attribute_key': attr_data['attribute_key'],
                         'display_name': attr_data['display_name'],
                         'levels': attr_data['levels']
@@ -68,34 +87,39 @@ class AttributeService:
     @classmethod
     def get_all_attributes(cls) -> List[JobAttribute]:
         """
-        Get all attribute definitions with caching.
-        Raises RuntimeError if no attributes available.
+        Get all attribute definitions with lazy initialization and caching.
+        Ensures attributes are seeded if database is empty.
+        Raises RuntimeError if no attributes can be loaded.
         """
-        # Try to ensure initialization
-        if not cls._initialized:
-            cls.ensure_initialized()
-        
-        # Check cache
-        if cls._cached_attributes is not None:
+        # Check cache first
+        if cls._cached_attributes is not None and cls._initialized:
             return cls._cached_attributes
+        
+        # Ensure database is accessible
+        db = cls._get_db()
+        if db is None:
+            raise RuntimeError(
+                "MongoDB connection not available. "
+                "Please check your MONGO_URI configuration."
+            )
+        
+        # Check if we need to seed
+        existing_count = db.job_attributes.count_documents({})
+        if existing_count == 0:
+            print("⚡ Lazy-initializing job attributes on first access")
+            cls.initialize_default_attributes()
         
         # Load from database
         attributes = JobAttribute.get_all_attributes()
         
-        # Validate we have attributes
-        if not attributes:
-            # Last resort: try direct seeding
-            cls._initialized = False
-            if cls.initialize_default_attributes():
-                attributes = JobAttribute.get_all_attributes()
-        
         if not attributes:
             raise RuntimeError(
-                "No job attributes found in database. "
+                "No job attributes found after initialization. "
                 "Please check MongoDB connection and seed data."
             )
         
         cls._cached_attributes = attributes
+        cls._initialized = True
         return attributes
     
     @classmethod
